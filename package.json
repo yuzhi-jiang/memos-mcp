@@ -1,0 +1,28 @@
+{
+  "name": "@yuzhi-jiang/memos-mcp",
+  "version": "0.1.0",
+  "description": "MCP服务器，连接到Memos API并提供搜索、管理和改进功能",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "postinstall": "node scripts/install.js"
+  },
+  "bin": {
+    "memos-mcp": "./bin/memos-mcp.js"
+  },
+  "keywords": [
+    "memos",
+    "mcp",
+    "ai",
+    "claude",
+    "model-context-protocol"
+  ],
+  "author": "yuzhi-jiang",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -130,7 +130,7 @@ class MemosClient:
         """
         params = {}
         if query:
-            params["content"] = query
+            params["filter"] = f"content.contains('{query}')"
         if filter_expr:
             params["filter"] = filter_expr
         return self._make_request("GET", "/api/v1/memos", params=params)
