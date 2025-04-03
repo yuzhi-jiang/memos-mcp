@@ -15,6 +15,23 @@
 
 ## 安装与配置
 
+你可以在配置文件中包含这个包，如下所示，就像使用其他 Python MCP 插件一样。
+```json
+{
+  "mcpServers": {
+    "memos-mcp": {
+      "command": "uvx",
+      "args": [
+        "memos-mcp"
+      ],
+      "env": {
+        "MEMOS_URL": "https://your-memos-instance-url",
+        "MEMOS_API_KEY": "your-memos-api-key"
+      }
+    }
+  }
+}
+```
 
 
 ### 前提条件
