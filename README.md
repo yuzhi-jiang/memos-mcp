@@ -15,13 +15,7 @@
 
 ## 安装与配置
 
-### 安装 via Smithery
 
-To install memos-cmp for Claude Desktop automatically via [Smithery](https://smithery.ai/server/codehatcher/memos-mcp):
-
-```bash
-npx -y @smithery/cli install codehatcher/memos-mcp --client claude
-```
 
 ### 前提条件
 

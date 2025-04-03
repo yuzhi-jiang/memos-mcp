@@ -1,11 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "memos-cmp"
-version = "0.1.0"
+name = "memos-mcp"
+version = "0.1.2"
 description = "Memos MCP服务器"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "httpx>=0.28.1",
-    "mcp[cli]>=1.6.0",
-    "requests>=2.32.3",
+requires-python = ">=3.10"
+authors = [
+    { name = "Yuzhi Jiang" }
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "requests",
+    "uvicorn",
+    "fastapi",
+    "starlette",
+    "python-dotenv",
+    "mcp[cli]"
+]
+
+[project.urls]
+Homepage = "https://github.com/yuzhi-jiang/memos-mcp"
+Issues = "https://github.com/yuzhi-jiang/memos-mcp/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/memos_cmp"]
+
+[project.scripts]
+memos-mcp = "memos_cmp.server:start_server"

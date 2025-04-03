@@ -440,7 +440,12 @@ def content_improvement_prompt() -> str:
 
     请分析备忘录内容，并提供具体的改进建议。
     """
-
+def start_server():
+    print(f"启动Memos MCP服务器，连接到: {MEMOS_URL}")
+    print("使用Ctrl+C停止服务器")
+    
+    # 启动MCP服务器
+    mcp.run(transport='stdio')
 if __name__ == "__main__":
     print(f"启动Memos MCP服务器，连接到: {MEMOS_URL}")
     print("使用Ctrl+C停止服务器")
