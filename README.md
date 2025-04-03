@@ -1,5 +1,7 @@
 # Memos MCP 服务器
 
+[![smithery badge](https://smithery.ai/badge/codehatcher/memos-mcp)](https://smithery.ai/server/codehatcher/memos-mcp)
+
 一个连接到 [Memos](https://usememos.com/) 的 MCP (Model Context Protocol) 服务器，让你可以通过 AI 助手（如 Claude）与你的 Memos 实例进行交互。
 
 ## 功能特点
@@ -12,6 +14,14 @@
 - 📝 **提示模板**：包含用于日常操作改进的提示
 
 ## 安装与配置
+
+### 安装 via Smithery
+
+To install memos-cmp for Claude Desktop automatically via [Smithery](https://smithery.ai/server/codehatcher/memos-mcp):
+
+```bash
+npx -y @smithery/cli install codehatcher/memos-mcp --client claude
+```
 
 ### 前提条件
 
