@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "memos-mcp"
-version = "0.1.2"
+version = "0.1.3"
 description = "Memos MCP服务器"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -34,3 +34,10 @@ packages = ["src/memos_cmp"]
 
 [project.scripts]
 memos-mcp = "memos_cmp.server:start_server"
+
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true

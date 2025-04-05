@@ -5,7 +5,7 @@ Memos MCP服务器
 这个服务器提供了与Memos API交互的功能，包括：
 - 连接到用户的Memos实例
 - 将API暴露为资源
-- 提供搜索、删除、更新、评论管理等工具
+- 提供搜索、删除、更新、管理等工具
 - 包含用于日常操作改进的提示
 """
 
@@ -192,7 +192,15 @@ def get_all_memos() -> str:
 
 @mcp.resource("memos://memos/{memo_id}")
 def get_memo_by_id(memo_id: str) -> str:
-    """获取指定ID的备忘录"""
+    """
+    获取指定ID的备忘录
+    
+    Args:
+        memo_id: 备忘录ID  格式是{G3o72r9oijTWFxy9ueWzW7} 而不是{memos/G3o72r9oijTWFxy9ueWzW7}
+    
+    Returns:
+        str: JSON 格式的备忘录数据
+    """
     try:
         memo = memos_client.get_memo(memo_id)
         return json.dumps(memo, ensure_ascii=False, indent=2)
@@ -276,7 +284,7 @@ def update_memo(memo_id: str, content: str = None, visibility: str = None) -> st
     更新备忘录
     
     Args:
-        memo_id: 备忘录ID
+        memo_id: 备忘录ID 格式是{G3o72r9oijTWFxy9ueWzW7} 而不是{memos/G3o72r9oijTWFxy9ueWzW7}
         content: 新的备忘录内容
         visibility: 新的可见性设置 (PRIVATE, PROTECTED, PUBLIC)
     """
@@ -302,61 +310,32 @@ def delete_memo(memo_id: str) -> str:
     删除备忘录
     
     Args:
-        memo_id: 要删除的备忘录ID
+        memo_id: 要删除的备忘录ID 备忘录ID 格式是{G3o72r9oijTWFxy9ueWzW7} 而不是{memos/G3o72r9oijTWFxy9ueWzW7}
     """
     try:
+        memo_id=format_memos_id(memo_id)
         memos_client.delete_memo(memo_id)
         return f"成功删除备忘录 {memo_id}"
     except Exception as e:
         logger.error(f"删除备忘录失败: {e}")
         return f"删除备忘录失败: {e}"
 
-@mcp.tool()
-def list_memo_comments(memo_id: str) -> str:
-    """
-    列出备忘录的评论
-    
-    Args:
-        memo_id: 备忘录ID
-    """
-    try:
-        comments = memos_client.list_memo_comments(memo_id)
-        return json.dumps(comments, ensure_ascii=False, indent=2)
-    except Exception as e:
-        logger.error(f"获取备忘录评论失败: {e}")
-        return f"获取备忘录评论失败: {e}"
 
-@mcp.tool()
-def create_memo_comment(memo_id: str, content: str) -> str:
-    """
-    创建备忘录评论
-    
-    Args:
-        memo_id: 备忘录ID
-        content: 评论内容
-    """
-    try:
-        result = memos_client.create_memo_comment(memo_id, content)
-        return json.dumps(result, ensure_ascii=False, indent=2)
-    except Exception as e:
-        logger.error(f"创建评论失败: {e}")
-        return f"创建评论失败: {e}"
 
-@mcp.tool()
-def delete_memo_comment(memo_id: str, comment_id: str) -> str:
+
+
+def format_memos_id(memo_id: str) -> str:
     """
-    删除备忘录评论
+    格式化备忘录ID，确保格式正确
     
     Args:
-        memo_id: 备忘录ID
-        comment_id: 评论ID
+        memo_id: 备忘录ID 格式是{G3o72r9oijTWFxy9ueWzW7} 而不是{memos/G3o72r9oijTWFxy9ueWzW7}
+    Returns:
+        str: 格式化后的备忘录ID
     """
-    try:
-        memos_client.delete_memo_comment(memo_id, comment_id)
-        return f"成功删除评论 {comment_id}"
-    except Exception as e:
-        logger.error(f"删除评论失败: {e}")
-        return f"删除评论失败: {e}"
+    if memo_id.startswith("memos/"):
+        memo_id = memo_id[6:]
+    return memo_id
 
 @mcp.tool()
 def delete_memo_tag(memo_id: str, tag: str) -> str:
@@ -364,32 +343,20 @@ def delete_memo_tag(memo_id: str, tag: str) -> str:
     从备忘录中删除标签
     
     Args:
-        memo_id: 备忘录ID
+        memo_id: 备忘录ID 格式是{G3o72r9oijTWFxy9ueWzW7} 而不是{memos/G3o72r9oijTWFxy9ueWzW7}
         tag: 要删除的标签名称(不包含#符号)
     """
     try:
+        if not memo_id:
+            return "请提供备忘录ID"
+        memo_id = format_memos_id(memo_id)
         result = memos_client.delete_memo_tag(memo_id, tag)
         return json.dumps(result, ensure_ascii=False, indent=2)
     except Exception as e:
         logger.error(f"删除标签失败: {e}")
         return f"删除标签失败: {e}"
 
-# 提示定义
-@mcp.prompt("daily-review")
-def daily_review_prompt() -> str:
-    """每日回顾提示，帮助用户回顾和组织当天的备忘录"""
-    return """
-    # 每日备忘录回顾
 
-    请帮我回顾今天的备忘录，并按以下方式组织：
-
-    1. 总结今天记录的主要事项
-    2. 识别需要跟进的任务
-    3. 提取重要的想法或见解
-    4. 建议如何改进我的记录习惯
-
-    请使用搜索工具查找今天的备忘录，并提供有见地的分析。
-    """
 
 @mcp.prompt("weekly-summary")
 def weekly_summary_prompt() -> str:
