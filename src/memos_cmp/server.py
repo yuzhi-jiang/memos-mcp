@@ -40,7 +40,7 @@ if not MEMOS_URL or not MEMOS_API_KEY:
 # 创建MCP服务器
 mcp = FastMCP(
     "Memos助手",
-    description="连接到Memos API并提供搜索、管理和改进功能的MCP服务器",
+    # description="连接到Memos API并提供搜索、管理和改进功能的MCP服务器",
     dependencies=["python-dotenv", "requests"]
 )
 
