@@ -138,6 +138,63 @@ filter_memos(filter_expr="createTime > timestamp('2023-01-01T00:00:00Z') && visi
 create_memo(content="完成 MCP 服务器项目", tags=["项目", "编程"])
 ```
 
+## Claude Code 和 OpenClaw Skills 支持
+
+本项目包含一个 `skills/` 目录，支持通过 [Claude Code](https://code.claude.com) 和 OpenClaw 的 Skills 功能安装和使用。
+
+### Skills 目录结构
+
+```
+skills/
+└── memos-mcp/
+    └── SKILL.md    # 技能元数据和使用说明
+```
+
+### 在 Claude Code 中安装
+
+**方法一：通过仓库安装**
+
+1. 在 Claude Code 中运行以下命令，将本仓库添加为插件市场：
+   ```
+   /plugin marketplace add yuzhi-jiang/memos-mcp
+   ```
+
+2. 然后安装技能：
+   ```
+   /plugin install memos-mcp@yuzhi-jiang/memos-mcp
+   ```
+
+**方法二：手动安装**
+
+将 `skills/memos-mcp/` 目录复制到以下位置之一：
+
+- **全局安装**（适用于所有项目）：
+  ```bash
+  cp -r skills/memos-mcp ~/.claude/skills/
+  ```
+
+- **项目安装**（仅适用于当前项目）：
+  ```bash
+  cp -r skills/memos-mcp .claude/skills/
+  ```
+
+### 在 OpenClaw 中安装
+
+将 `skills/memos-mcp/` 目录复制到 OpenClaw 的 skills 目录中：
+
+```bash
+cp -r skills/memos-mcp ~/.openclaw/skills/
+```
+
+### 技能说明
+
+安装后，Claude 将自动识别该技能，并能通过自然语言指令与你的 Memos 实例交互：
+
+- "搜索关于项目的备忘录"
+- "创建一条新备忘录：今天完成了报告"
+- "总结本周的备忘录"
+- "删除备忘录中的草稿标签"
+
 ## 贡献
 
 欢迎提交问题和拉取请求！
