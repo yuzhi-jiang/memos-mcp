@@ -1,99 +1,148 @@
 ---
 name: memos-mcp
-description: Interact with your Memos note-taking instance via the Memos MCP server. Use this skill to search, create, update, delete, and manage memos and tags. Activate when the user wants to work with their personal notes, save information to Memos, find past notes, or organize memo content with tags.
+description: Interact with a Memos note-taking instance directly using a bundled Python script — no MCP server installation required. Use this skill to list, search, create, update, delete, and tag memos. Activate when the user wants to work with their personal notes, save new information, find past memos, or organize content with tags.
 ---
 
-# Memos MCP Skill
+# Memos Skill
 
-This skill provides integration with [Memos](https://usememos.com/) — a privacy-first, lightweight note-taking service — through the Memos MCP server. It enables you to interact with your memos directly from Claude.
+This skill communicates with [Memos](https://usememos.com/) directly through its REST API using the bundled script `scripts/memos.py`. **No MCP server installation is required** — only Python 3 (standard library only, no extra packages needed).
 
-## Setup
+## First-time Setup
 
-Before using this skill, ensure the Memos MCP server is configured with your credentials:
+The script needs two pieces of information: your Memos instance URL and your API key.
 
-```json
-{
-  "mcpServers": {
-    "memos-mcp": {
-      "command": "uvx",
-      "args": ["memos-mcp"],
-      "env": {
-        "MEMOS_URL": "https://your-memos-instance-url",
-        "MEMOS_API_KEY": "your-memos-api-key"
-      }
-    }
-  }
-}
+**Option A — Environment variables (recommended):**
+```bash
+export MEMOS_URL=https://your-memos-instance-url
+export MEMOS_API_KEY=your-memos-api-key
 ```
 
-## Available Tools
+**Option B — Config file `~/.memos-config`:**
+```
+MEMOS_URL=https://your-memos-instance-url
+MEMOS_API_KEY=your-memos-api-key
+```
 
-### Search and Filter
+**Option C — CLI flags on every command:**
+```bash
+python scripts/memos.py --url https://... --token your-key <command>
+```
 
-- **`search_memos(query, filter_expr)`** — Search memos by keyword or CEL expression
-- **`filter_memos(filter_expr)`** — Filter memos using CEL expressions for advanced queries
+Ask the user which option they prefer if credentials have not been set yet.
 
-### Create and Manage
+## Script Location
 
-- **`create_memo(content, visibility, tags)`** — Create a new memo with optional tags and visibility
-- **`update_memo(memo_id, content, visibility)`** — Update an existing memo's content or visibility
-- **`delete_memo(memo_id)`** — Delete a memo by ID
-- **`delete_memo_tag(memo_id, tag)`** — Remove a tag from a memo
+The script is at `scripts/memos.py` relative to the skill folder. When running it, use the path to where the skill was installed, for example:
 
-### Resources
+```bash
+python ~/.claude/skills/memos-mcp/scripts/memos.py <command>
+```
 
-- `memos://recent` — The 10 most recent memos
-- `memos://all` — All memos
-- `memos://memos/{memo_id}` — A specific memo by ID
+Or if installed in the project:
+```bash
+python .claude/skills/memos-mcp/scripts/memos.py <command>
+```
+
+## Available Commands
+
+### List memos
+```bash
+python scripts/memos.py list [--limit N]
+```
+Returns the N most recent memos (default: 20).
+
+### Get a memo by ID
+```bash
+python scripts/memos.py get <memo_id>
+```
+
+### Search memos by keyword
+```bash
+python scripts/memos.py search <query>
+```
+Example: `python scripts/memos.py search "machine learning"`
+
+### Filter memos with a CEL expression
+```bash
+python scripts/memos.py filter "<cel_expression>"
+```
+Example: `python scripts/memos.py filter "createTime > timestamp('2024-01-01T00:00:00Z')"`
+
+### Create a new memo
+```bash
+python scripts/memos.py create "<content>" [--visibility PRIVATE|PROTECTED|PUBLIC] [--tags tag1,tag2]
+```
+Example: `python scripts/memos.py create "Finished the project proposal" --tags work,review`
+
+### Update an existing memo
+```bash
+python scripts/memos.py update <memo_id> [--content "<new content>"] [--visibility PRIVATE|PROTECTED|PUBLIC]
+```
+
+### Delete a memo
+```bash
+python scripts/memos.py delete <memo_id>
+```
+
+### Remove a tag from a memo
+```bash
+python scripts/memos.py delete-tag <memo_id> <tag>
+```
+Example: `python scripts/memos.py delete-tag G3o72r9oijTWFxy9ueWzW7 draft`
 
 ## Instructions
 
-When a user asks to interact with their notes or memos:
+When a user wants to interact with their Memos:
 
-1. **Search**: Use `search_memos` with a relevant keyword or `filter_memos` with a CEL expression for precise queries.
-2. **Create**: Use `create_memo` to save new information. By default, a `mcp` tag is added automatically.
-3. **Update**: Use `update_memo` with the memo's ID (short form, e.g. `G3o72r9oijTWFxy9ueWzW7`, not `memos/G3o72r9oijTWFxy9ueWzW7`).
-4. **Delete**: Use `delete_memo` to remove a memo, or `delete_memo_tag` to remove just a tag.
-5. **Browse**: Access `memos://recent` or `memos://all` to list memos without a specific search term.
-
-### Memo ID Format
-
-Always use the short ID format: `G3o72r9oijTWFxy9ueWzW7`
-Not the full path format: `memos/G3o72r9oijTWFxy9ueWzW7`
+1. **Check credentials** — If `MEMOS_URL` or `MEMOS_API_KEY` are not set, ask the user and help them configure one of the three options above.
+2. **Run the script** using the Bash tool with the appropriate command. All output is JSON.
+3. **Present results** in a readable format — summarize memo content rather than dumping raw JSON.
+4. **Memo ID format** — Always use the short ID `G3o72r9oijTWFxy9ueWzW7`, not the prefixed form `memos/G3o72r9oijTWFxy9ueWzW7`. The script handles both automatically.
 
 ### Visibility Options
 
-- `PRIVATE` — Only visible to you (default)
-- `PROTECTED` — Visible to authenticated users
-- `PUBLIC` — Visible to everyone
+| Value | Meaning |
+|-------|---------|
+| `PRIVATE` | Only visible to you (default) |
+| `PROTECTED` | Visible to authenticated users |
+| `PUBLIC` | Visible to everyone |
 
-## CEL Expression Examples
+### CEL Expression Reference
 
 | Goal | Expression |
 |------|-----------|
-| Find memos containing a keyword | `content.contains('keyword')` |
-| Find memos after a date | `createTime > timestamp('2024-01-01T00:00:00Z')` |
-| Find private memos | `visibility == 'PRIVATE'` |
-| Combine conditions | `content.contains('project') && visibility == 'PRIVATE'` |
+| Keyword in content | `content.contains('keyword')` |
+| Created after date | `createTime > timestamp('2024-01-01T00:00:00Z')` |
+| Private memos only | `visibility == 'PRIVATE'` |
+| Combined filter | `content.contains('project') && visibility == 'PRIVATE'` |
 
-## Examples
+## Usage Examples
 
 ### Save a note
-> "Save a note that I finished the project proposal and it needs review by Friday"
+> "Save a note that I finished the project proposal"
 
-Use `create_memo` with the content and optionally add a `work` tag.
+```bash
+python scripts/memos.py create "Finished the project proposal" --tags work
+```
 
 ### Find past notes
 > "Find all my notes about machine learning"
 
-Use `search_memos(query="machine learning")`.
+```bash
+python scripts/memos.py search "machine learning"
+```
 
 ### Weekly review
-> "Summarize my notes from this week"
+> "List memos from this week"
 
-Use `filter_memos(filter_expr="createTime > timestamp('2024-01-01T00:00:00Z')")` (adjust the date) then summarize the results.
+```bash
+python scripts/memos.py filter "createTime > timestamp('2024-01-06T00:00:00Z')"
+```
+Adjust the date to the start of the current week, then summarize the returned memos.
 
 ### Organize by tags
 > "Remove the 'draft' tag from memo G3o72r9oijTWFxy9ueWzW7"
 
-Use `delete_memo_tag(memo_id="G3o72r9oijTWFxy9ueWzW7", tag="draft")`.
+```bash
+python scripts/memos.py delete-tag G3o72r9oijTWFxy9ueWzW7 draft
+```

@@ -142,12 +142,16 @@ create_memo(content="完成 MCP 服务器项目", tags=["项目", "编程"])
 
 本项目包含一个 `skills/` 目录，支持通过 [Claude Code](https://code.claude.com) 和 OpenClaw 的 Skills 功能安装和使用。
 
+**无需安装 MCP 服务器** — 技能内置了独立的 Python 脚本 (`scripts/memos.py`)，仅使用 Python 标准库直接调用 Memos REST API。
+
 ### Skills 目录结构
 
 ```
 skills/
 └── memos-mcp/
-    └── SKILL.md    # 技能元数据和使用说明
+    ├── SKILL.md          # 技能元数据和使用说明
+    └── scripts/
+        └── memos.py      # 独立的 Memos API 客户端脚本（无需额外依赖）
 ```
 
 ### 在 Claude Code 中安装
@@ -186,9 +190,30 @@ skills/
 cp -r skills/memos-mcp ~/.openclaw/skills/
 ```
 
+### 配置凭据
+
+安装后，设置你的 Memos 实例 URL 和 API 密钥（三选一）：
+
+**方式 A — 环境变量：**
+```bash
+export MEMOS_URL=https://your-memos-instance-url
+export MEMOS_API_KEY=your-memos-api-key
+```
+
+**方式 B — 配置文件 `~/.memos-config`：**
+```
+MEMOS_URL=https://your-memos-instance-url
+MEMOS_API_KEY=your-memos-api-key
+```
+
+**方式 C — 命令行参数：**
+```bash
+python ~/.claude/skills/memos-mcp/scripts/memos.py --url https://... --token your-key list
+```
+
 ### 技能说明
 
-安装后，Claude 将自动识别该技能，并能通过自然语言指令与你的 Memos 实例交互：
+安装并配置凭据后，Claude 会通过 `scripts/memos.py` 脚本与你的 Memos 实例直接交互，支持以下自然语言指令：
 
 - "搜索关于项目的备忘录"
 - "创建一条新备忘录：今天完成了报告"
