@@ -176,7 +176,8 @@ class MemosClient:
     # 用户相关方法
     def get_users(self, params: Dict = None) -> List[Dict]:
         """获取用户列表"""
-        return self._make_request_admin("GET", "/api/v1/users", params=params)
+        response = self._make_request_admin("GET", "/api/v1/users", params=params)
+        return response.get("users", []) if isinstance(response, dict) else []
     
     # 标签相关方法
     def get_tags(self) -> List[Dict]:
