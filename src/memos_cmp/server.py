@@ -374,8 +374,8 @@ def create_memo_comment(memo_id: str, content: str, visibility: str = "PRIVATE")
         result = memos_client.create_memo_comment(memo_id, data)
         return json.dumps(result, ensure_ascii=False, indent=2)
     except Exception as e:
-        logger.error(f"创建备忘录失败: {e}")
-        return f"创建备忘录失败: {e}"
+        logger.error(f"创建备忘录评论失败: {e}")
+        return f"创建备忘录评论失败: {e}"
 
 @mcp.tool()
 def update_memo(memo_id: str, content: str = None, visibility: str = None) -> str:
