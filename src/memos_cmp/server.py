@@ -29,6 +29,7 @@ load_dotenv()
 # 获取Memos配置
 MEMOS_URL = os.getenv("MEMOS_URL")
 MEMOS_API_KEY = os.getenv("MEMOS_API_KEY")
+MEMOS_ADMIN_API_KEY = os.getenv("MEMOS_ADMIN_API_KEY")
 DEFAULT_TAG = os.getenv("DEFAULT_TAG", "mcp")  # 默认标签，如果未设置则使用"mcp"
 
 if not MEMOS_URL or not MEMOS_API_KEY:
@@ -40,17 +41,23 @@ if not MEMOS_URL or not MEMOS_API_KEY:
 # 创建MCP服务器
 mcp = FastMCP(
     "Memos助手",
-    description="连接到Memos API并提供搜索、管理和改进功能的MCP服务器",
-    dependencies=["python-dotenv", "requests"]
+    instructions="连接到Memos API并提供搜索、管理和改进功能的MCP服务器",
+    dependencies=["python-dotenv", "requests"],
+    host="0.0.0.0",
+    port=3002
 )
 
 # Memos API客户端类
 class MemosClient:
-    def __init__(self, base_url: str, api_key: str):
+    def __init__(self, base_url: str, api_key: str, admin_api_key: Optional[str] = None):
         self.base_url = base_url.rstrip('/')
         self.api_key = api_key
         self.headers = {
             "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        self.admin_headers = {
+            "Authorization": f"Bearer {admin_api_key}" if admin_api_key else None,
             "Content-Type": "application/json"
         }
     
@@ -62,6 +69,25 @@ class MemosClient:
                 method=method,
                 url=url,
                 headers=self.headers,
+                params=params,
+                json=data
+            )
+            response.raise_for_status()
+            if response.content:
+                return response.json()
+            return {}
+        except requests.RequestException as e:
+            logger.error(f"API请求失败: {e}")
+            raise Exception(f"API请求失败: {e}")
+        
+    def _make_request_admin(self, method: str, endpoint: str, params: Dict = None, data: Dict = None) -> Dict:
+        """发送请求到Memos Admin API"""
+        url = f"{self.base_url}{endpoint}"
+        try:
+            response = requests.request(
+                method=method,
+                url=url,
+                headers=self.admin_headers,
                 params=params,
                 json=data
             )
@@ -112,6 +138,10 @@ class MemosClient:
         """创建新备忘录"""
         return self._make_request("POST", "/api/v1/memos", data=data)
     
+    def create_memo_comment(self, memo_id: str, data: Dict) -> Dict:
+        """创建备忘录评论"""
+        return self._make_request("POST", f"/api/v1/memos/{memo_id}/comments", data=data)
+    
     def update_memo(self, memo_id: str, data: Dict) -> Dict:
         """更新备忘录"""
         return self._make_request("PATCH", f"/api/v1/memos/{memo_id}", data=data)
@@ -143,6 +173,11 @@ class MemosClient:
             filter_expr: CEL 表达式过滤器
         """
         return self.search_memos(filter_expr=filter_expr)
+    # 用户相关方法
+    def get_users(self, params: Dict = None) -> List[Dict]:
+        """获取用户列表"""
+        response = self._make_request_admin("GET", "/api/v1/users", params=params)
+        return response.get("users", []) if isinstance(response, dict) else []
     
     # 标签相关方法
     def get_tags(self) -> List[Dict]:
@@ -165,7 +200,7 @@ class MemosClient:
 
 
 # 创建Memos客户端实例
-memos_client = MemosClient(MEMOS_URL, MEMOS_API_KEY)
+memos_client = MemosClient(MEMOS_URL, MEMOS_API_KEY, MEMOS_ADMIN_API_KEY)
 
 # 资源定义
 @mcp.resource("memos://recent")
@@ -187,6 +222,16 @@ def get_all_memos() -> str:
     except Exception as e:
         logger.error(f"获取所有备忘录失败: {e}")
         return f"获取所有备忘录失败: {e}"
+
+@mcp.resource("memos://users")
+def get_all_users() -> str:
+    """获取所有用户"""
+    try:
+        users = memos_client.get_users()
+        return json.dumps(users, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"获取所有用户失败: {e}")
+        return f"获取所有用户失败: {e}"
 
 
 
@@ -277,6 +322,61 @@ def create_memo(content: str, visibility: str = "PRIVATE", tags: List[str] = Non
     except Exception as e:
         logger.error(f"创建备忘录失败: {e}")
         return f"创建备忘录失败: {e}"
+
+@mcp.tool()
+def get_all_users_tools() -> str:
+    """获取所有用户"""
+    try:
+        users = memos_client.get_users()
+        return json.dumps(users, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"获取所有用户失败: {e}")
+        return f"获取所有用户失败: {e}"
+
+
+@mcp.tool(name="创建备忘录的评论",description="在指定的备忘录下创建一个评论，提供内容和可见性设置",
+          #tags={"create", "comment", "memo"}, 
+        #   parameters={
+        #       "memo_id": {"type": "string", "description": "要评论的备忘录ID，格式是{G3o72r9oijTWFxy9ueWzW7} 而不是{memos/G3o72r9oijTWFxy9ueWzW7}"},
+        #       "content": {"type": "string", "description": "评论内容"},
+        #       "visibility": {"type": "string", "description": "评论可见性设置 (PRIVATE, PROTECTED, PUBLIC)", "default": "PRIVATE"}}
+        )
+def create_memo_comment(memo_id: str, content: str, visibility: str = "PRIVATE") -> str:
+    """
+    创建新备忘录评论
+    
+    Args:
+        memo_id: 备忘录ID 格式是{G3o72r9oijTWFxy9ueWzW7} 而不是{memos/G3o72r9oijTWFxy9ueWzW7}
+        content: 备忘录评论内容
+        visibility: 可见性设置 (PRIVATE, PROTECTED, PUBLIC)
+    """
+    try:
+        # 处理标签
+        # if tags is None:
+        #     # 使用默认标签
+        #     if DEFAULT_TAG:
+        #         tags = [DEFAULT_TAG]
+        #     else:
+        #         tags = []
+        
+        # # 将标签添加到内容中
+        # content_with_tags = content+"\n"
+        # for tag in tags:
+        #     if not tag.startswith("#"):
+        #         tag = f"#{tag}"
+        #     if tag not in content_with_tags:
+        #         content_with_tags += f" {tag}"
+        
+        data = {
+    #"state": "STATE_UNSPECIFIED",
+    "content": content,
+    "visibility": visibility
+  }
+        result = memos_client.create_memo_comment(memo_id, data)
+        return json.dumps(result, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"创建备忘录评论失败: {e}")
+        return f"创建备忘录评论失败: {e}"
 
 @mcp.tool()
 def update_memo(memo_id: str, content: str = None, visibility: str = None) -> str:
@@ -412,10 +512,16 @@ def start_server():
     print("使用Ctrl+C停止服务器")
     
     # 启动MCP服务器
-    mcp.run(transport='stdio')
+    #mcp.run(transport='stdio')
+    #mcp.run(transport="http",host="0.0.0.0",port=3002)
+    mcp.run(transport="streamable-http")
+    #mcp.run(transport="streamable-http",host="0.0.0.0",port=3002)
 if __name__ == "__main__":
     print(f"启动Memos MCP服务器，连接到: {MEMOS_URL}")
     print("使用Ctrl+C停止服务器")
     
     # 启动MCP服务器
-    mcp.run(transport='stdio')
+    #mcp.run(transport='stdio')
+    #mcp.run(transport="http",host="0.0.0.0",port=3002)
+    mcp.run(transport="streamable-http")
+    #mcp.run(transport="streamable-http",host="0.0.0.0",port=3002)
