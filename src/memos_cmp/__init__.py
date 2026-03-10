@@ -2,7 +2,7 @@
 Memos MCP Server Package
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.5"
 
 from .server import mcp, start_server
 

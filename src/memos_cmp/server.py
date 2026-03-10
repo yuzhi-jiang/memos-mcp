@@ -31,6 +31,10 @@ MEMOS_URL = os.getenv("MEMOS_URL")
 MEMOS_API_KEY = os.getenv("MEMOS_API_KEY")
 MEMOS_ADMIN_API_KEY = os.getenv("MEMOS_ADMIN_API_KEY")
 DEFAULT_TAG = os.getenv("DEFAULT_TAG", "mcp")  # 默认标签，如果未设置则使用"mcp"
+MCP_TRANSPORT = os.getenv("MCP_TRANSPORT", "stdio")
+MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
+MCP_PORT = int(os.getenv("MCP_PORT", "3002"))
+MCP_STREAMABLE_HTTP_PATH = os.getenv("MCP_STREAMABLE_HTTP_PATH", "/mcp")
 
 if not MEMOS_URL or not MEMOS_API_KEY:
     logger.error("请在.env文件中设置MEMOS_URL和MEMOS_API_KEY")
@@ -43,8 +47,10 @@ mcp = FastMCP(
     "Memos助手",
     instructions="连接到Memos API并提供搜索、管理和改进功能的MCP服务器",
     dependencies=["python-dotenv", "requests"],
-    host="0.0.0.0",
-    port=3002
+    host=MCP_HOST,
+    port=MCP_PORT,
+    streamable_http_path=MCP_STREAMABLE_HTTP_PATH,
+    stateless_http=True,
 )
 
 # Memos API客户端类
@@ -334,7 +340,7 @@ def get_all_users_tools() -> str:
         return f"获取所有用户失败: {e}"
 
 
-@mcp.tool(name="创建备忘录的评论",description="在指定的备忘录下创建一个评论，提供内容和可见性设置",
+@mcp.tool(name="create_memo_comment",description="在指定的备忘录下创建一个评论，提供内容和可见性设置",
           #tags={"create", "comment", "memo"}, 
         #   parameters={
         #       "memo_id": {"type": "string", "description": "要评论的备忘录ID，格式是{G3o72r9oijTWFxy9ueWzW7} 而不是{memos/G3o72r9oijTWFxy9ueWzW7}"},
@@ -509,19 +515,22 @@ def content_improvement_prompt() -> str:
     """
 def start_server():
     print(f"启动Memos MCP服务器，连接到: {MEMOS_URL}")
-    print("使用Ctrl+C停止服务器")
-    
-    # 启动MCP服务器
-    #mcp.run(transport='stdio')
-    #mcp.run(transport="http",host="0.0.0.0",port=3002)
-    mcp.run(transport="streamable-http")
-    #mcp.run(transport="streamable-http",host="0.0.0.0",port=3002)
+    print(f"使用传输方式: {MCP_TRANSPORT}")
+
+    if MCP_TRANSPORT == "stdio":
+        print("运行于 stdio 模式，适合 Claude Code 等本地 MCP 客户端。")
+        mcp.run(transport="stdio")
+        return
+
+    if MCP_TRANSPORT == "streamable-http":
+        print("使用Ctrl+C停止服务器")
+        print(f"HTTP 地址: http://127.0.0.1:{MCP_PORT}{MCP_STREAMABLE_HTTP_PATH}")
+        mcp.run(transport="streamable-http")
+        return
+
+    raise ValueError(
+        f"不支持的 MCP_TRANSPORT: {MCP_TRANSPORT}，可选值: stdio, streamable-http"
+    )
+
 if __name__ == "__main__":
-    print(f"启动Memos MCP服务器，连接到: {MEMOS_URL}")
-    print("使用Ctrl+C停止服务器")
-    
-    # 启动MCP服务器
-    #mcp.run(transport='stdio')
-    #mcp.run(transport="http",host="0.0.0.0",port=3002)
-    mcp.run(transport="streamable-http")
-    #mcp.run(transport="streamable-http",host="0.0.0.0",port=3002)
+    start_server()
